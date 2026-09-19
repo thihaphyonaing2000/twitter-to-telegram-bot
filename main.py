@@ -62,5 +62,5 @@ def main():
     else:
         print("ဗီဒီယို အသစ် မတွေ့ရသေးပါ။")
 
-if name == "main":
+if __name__=="__main__":
     main()
