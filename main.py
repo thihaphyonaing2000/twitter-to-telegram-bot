@@ -15,7 +15,8 @@ TARGET_ACCOUNTS = [
     "alejito_bbk",
     "TOMMYGIKKI",
     "naymyooooo",
-    "banyar5343"
+    "banyar5343",
+    "BomberKeo"
 ]
 
 def send_telegram_video(video_url, caption):
