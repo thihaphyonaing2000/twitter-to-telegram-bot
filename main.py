@@ -24,6 +24,13 @@ TARGET_ACCOUNTS = [
     "Rhysand112797"
 ]
 
+# အလုပ်လုပ်နိုင်ချေရှိသော Nitter ဆာဗာစာရင်းများ (Fallback Instances)
+NITTER_INSTANCES = [
+    "https://nitter.poast.org",
+    "https://nitter.catsarch.com",
+    "https://nitter.privacydev.net"
+]
+
 def send_telegram_video(video_url, caption):
     """Telegram ချန်နယ်သို့ ဗီဒီယို ပို့ပေးရန် function"""
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendVideo"
@@ -42,52 +49,51 @@ def send_telegram_video(video_url, caption):
         print(f"Error sending to Telegram: {e}")
 
 def get_latest_twitter_videos():
-    """Target Accounts များမှ Original နှင့် Retweet ဗီဒီယိုများကို ရှာဖွေရန်"""
+    """Target Accounts များမှ Nitter ဆာဗာအမျိုးမျိုးကိုသုံး၍ ဗီဒီယိုရှာဖွေရန်"""
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
     }
     
     for username in TARGET_ACCOUNTS:
         print(f"Checking account: {username}...")
-        # Nitter instance ကို အသုံးပြု၍ ဝင်ရောက်ရှာဖွေခြင်း (ဆာဗာအသစ်သို့ ပြောင်းထားသည်)
-        nitter_url = f"https://nitter.poast.org/{username}"
+        success = False
         
-        try:
-            response = requests.get(nitter_url, headers=headers, timeout=10)
-            if response.status_code != 200:
-                print(f"Could not reach Nitter for {username}")
+        # ဆာဗာတစ်ခုချင်းစီကို အလှည့်ကျ စမ်းသပ်ခြင်း
+        for base_url in NITTER_INSTANCES:
+            nitter_url = f"{base_url}/{username}"
+            try:
+                response = requests.get(nitter_url, headers=headers, timeout=10)
+                if response.status_code == 200:
+                    soup = BeautifulSoup(response.text, 'html.parser')
+                    tweets = soup.find_all('div', class_='timeline-item')
+                    
+                    for tweet in tweets:
+                        video_elem = tweet.find('video')
+                        if video_elem and video_elem.get('src'):
+                            video_src = video_elem.get('src')
+                            if video_src.startswith('http'):
+                                video_url = video_src
+                            else:
+                                video_url = f"{base_url}{video_src}"
+                                
+                            tweet_text = tweet.find('div', class_='tweet-content')
+                            caption = tweet_text.text.strip() if tweet_text else f"Video from @{username}"
+                            caption = f"@{username}: {caption}"
+                            
+                            print(f"Found video from {username} using {base_url}! Sending...")
+                            return video_url, caption
+                    
+                    success = True
+                    break # ဒီအကောင့်အတွက် ဆာဗာအလုပ်လုပ်သဖြင့် ဆက်မစမ်းတော့ပါ
+            except Exception as e:
                 continue
                 
-            soup = BeautifulSoup(response.text, 'html.parser')
-            tweets = soup.find_all('div', class_='timeline-item')
-            
-            for tweet in tweets:
-                # ဗီဒီယို ပါဝင်သော tweet ဟုတ်မဟုတ် စစ်ဆေးခြင်း (Original နှင့် Retweet နှစ်ခုစလုံး ပါဝင်သည်)
-                video_elem = tweet.find('video')
-                if video_elem and video_elem.get('src'):
-                    video_src = video_elem.get('src')
-                    if video_src.startswith('http'):
-                        video_url = video_src
-                    else:
-                        video_url = f"https://nitter.poast.org{video_src}"
-                        
-                    # Caption ရယူရန်
-                    tweet_text = tweet.find('div', class_='tweet-content')
-                    caption = tweet_text.text.strip() if tweet_text else f"Video from @{username}"
-                    caption = f"@{username}: {caption}"
-                    
-                    print(f"Found video from {username}! Sending...")
-                    return video_url, caption
-                    
-        except Exception as e:
-            print(f"Error scraping {username}: {e}")
-            
-        print(f"No new videos found for {username}.")
+        print(f"No new videos found or failed to reach instances for {username}.")
     
     return None, None
 
 def main():
-    print("Bot is running and checking for videos across all accounts...")
+    print("Bot is running with fallback instances...")
     video_url, caption = get_latest_twitter_videos()
     
     if video_url:
