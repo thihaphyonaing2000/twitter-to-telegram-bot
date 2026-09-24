@@ -49,8 +49,8 @@ def get_latest_twitter_videos():
     
     for username in TARGET_ACCOUNTS:
         print(f"Checking account: {username}...")
-        # Nitter instance ကို အသုံးပြု၍ ဝင်ရောက်ရှာဖွေခြင်း
-        nitter_url = f"https://nitter.privacydev.net/{username}"
+        # Nitter instance ကို အသုံးပြု၍ ဝင်ရောက်ရှာဖွေခြင်း (ဆာဗာအသစ်သို့ ပြောင်းထားသည်)
+        nitter_url = f"https://nitter.poast.org/{username}"
         
         try:
             response = requests.get(nitter_url, headers=headers, timeout=10)
@@ -69,7 +69,7 @@ def get_latest_twitter_videos():
                     if video_src.startswith('http'):
                         video_url = video_src
                     else:
-                        video_url = f"https://nitter.privacydev.net{video_src}"
+                        video_url = f"https://nitter.poast.org{video_src}"
                         
                     # Caption ရယူရန်
                     tweet_text = tweet.find('div', class_='tweet-content')
